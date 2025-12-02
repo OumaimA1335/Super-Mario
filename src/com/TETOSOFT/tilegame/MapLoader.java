@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 import com.TETOSOFT.graphics.*;
+import com.TETOSOFT.tilegame.factory.EnemyFactory;
 import com.TETOSOFT.tilegame.sprites.*;
 
 
@@ -28,6 +29,9 @@ public class MapLoader
     private Sprite goalSprite;
     private Sprite grubSprite;
     private Sprite flySprite;
+    
+    private Animation[] flyAnim;
+    private Animation[] grubAnim;
 
     /**
         Creates a new ResourceManager with the specified
@@ -178,10 +182,12 @@ public class MapLoader
                     addSprite(newMap, goalSprite, x, y);
                 }
                 else if (ch == '1') {
-                    addSprite(newMap, grubSprite, x, y);
+                     Creature grub = EnemyFactory.createEnemy("grub", grubAnim[0], grubAnim[1], grubAnim[2], grubAnim[3]);
+                    addSprite(newMap, grub, x, y);
                 }
                 else if (ch == '2') {
-                    addSprite(newMap, flySprite, x, y);
+                     Creature fly = EnemyFactory.createEnemy("fly", flyAnim[0], flyAnim[1], flyAnim[2], flyAnim[3]);
+                    addSprite(newMap, fly, x, y);
                 }
             }
         }
@@ -276,21 +282,19 @@ public class MapLoader
         }
 
         // create creature animations
-        Animation[] playerAnim = new Animation[4];
-        Animation[] flyAnim = new Animation[4];
-        Animation[] grubAnim = new Animation[4];
-        
-        for (int i=0; i<4; i++) 
-        {
-            playerAnim[i] = createPlayerAnim (images[i][0]);
-            flyAnim[i] = createFlyAnim (images[i][1], images[i][1], images[i][3]);
-            grubAnim[i] = createGrubAnim (images[i][4], images[i][5]);
+         Animation[] playerAnim = new Animation[4];
+        flyAnim = new Animation[4];
+        grubAnim = new Animation[4];
+
+        for (int i=0; i<4; i++) {
+            playerAnim[i] = createPlayerAnim(images[i][0]);
+            flyAnim[i] = createFlyAnim(images[i][1], images[i][2], images[i][3]);
+            grubAnim[i] = createGrubAnim(images[i][4], images[i][5]);
         }
 
-        // create creature sprites
-        playerSprite = new Player (playerAnim[0], playerAnim[1],playerAnim[2], playerAnim[3]);
-        flySprite = new Fly (flyAnim[0], flyAnim[1],flyAnim[2], flyAnim[3]);
-        grubSprite = new Grub (grubAnim[0], grubAnim[1],grubAnim[2], grubAnim[3]);
+        playerSprite = new Player(playerAnim[0], playerAnim[1], playerAnim[2], playerAnim[3]);
+        flySprite = new Fly(flyAnim[0], flyAnim[1], flyAnim[2], flyAnim[3]);
+        grubSprite = new Grub(grubAnim[0], grubAnim[1], grubAnim[2], grubAnim[3]);
     }
 
 

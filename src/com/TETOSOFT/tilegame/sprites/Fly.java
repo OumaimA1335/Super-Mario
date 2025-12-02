@@ -1,11 +1,12 @@
 package com.TETOSOFT.tilegame.sprites;
 
 import com.TETOSOFT.graphics.Animation;
+import com.TETOSOFT.tilegame.factory.Enemy;
 
 /**
     A Fly is a Creature that fly slowly in the air.
 */
-public class Fly extends Creature {
+public class Fly extends Creature implements Enemy{
 
     public Fly(Animation left, Animation right,
         Animation deadLeft, Animation deadRight)
