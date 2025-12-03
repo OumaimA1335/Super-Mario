@@ -16,6 +16,7 @@ import com.TETOSOFT.tilegame.sprites.*;
 import com.TETOSOFT.tilegame.state.GameOverState;
 import com.TETOSOFT.tilegame.state.GameState;
 import com.TETOSOFT.tilegame.state.MenuStateSimple;
+import com.TETOSOFT.tilegame.state.PauseState;
 
 /**
  * GameManager manages all parts of the game.
@@ -48,6 +49,8 @@ public class GameEngine extends GameCore {
 
     public void init() {
         super.init();
+
+        
 
         // set up input manager
         initInput();
@@ -100,6 +103,9 @@ public class GameEngine extends GameCore {
         moveRight = new GameAction("moveRight");
         jump = new GameAction("jump", GameAction.DETECT_INITAL_PRESS_ONLY);
         exit = new GameAction("exit", GameAction.DETECT_INITAL_PRESS_ONLY);
+        pauseAction = new GameAction("pause", GameAction.DETECT_INITAL_PRESS_ONLY);
+       
+
         enterAction = new GameAction("enter", GameAction.DETECT_INITAL_PRESS_ONLY);
         inputManager = new InputManager(screen.getFullScreenWindow());
         inputManager.setCursor(InputManager.INVISIBLE_CURSOR);
@@ -109,30 +115,37 @@ public class GameEngine extends GameCore {
         inputManager.mapToKey(jump, KeyEvent.VK_SPACE);
         inputManager.mapToKey(enterAction, KeyEvent.VK_ENTER);
         inputManager.mapToKey(exit, KeyEvent.VK_ESCAPE);
+       inputManager.mapToKey(pauseAction, KeyEvent.VK_P);
+
     }
 
     private void checkInput(long elapsedTime) {
-        if (exit.isPressed()) {
-            setCurrentState(new MenuStateSimple(this));
-        }
-
-       Player player = getOriginalPlayer();
-        if (player.isAlive()) {
-            float velocityX = 0;
-            if (moveLeft.isPressed()) {
-                velocityX -= player.getMaxSpeed();
-            }
-            if (moveRight.isPressed()) {
-                velocityX += player.getMaxSpeed();
-            }
-            if (jump.isPressed()) {
-                player.jump(false);
-            }
-            player.setVelocityX(velocityX);
-        }
-
-        // Pas besoin de gérer enterAction ici car c'est géré par le GameState
+    if (exit.isPressed()) {
+        setCurrentState(new MenuStateSimple(this));
     }
+
+    // Gestion de la pause
+    if (pauseAction.isPressed() && !(currentState instanceof PauseState)) {
+        setCurrentState(new PauseState(this));
+        return; // On ne fait rien d'autre tant que le jeu est en pause
+    }
+
+    Player player = getOriginalPlayer();
+    if (player.isAlive()) {
+        float velocityX = 0;
+        if (moveLeft.isPressed()) {
+            velocityX -= player.getMaxSpeed();
+        }
+        if (moveRight.isPressed()) {
+            velocityX += player.getMaxSpeed();
+        }
+        if (jump.isPressed()) {
+            player.jump(false);
+        }
+        player.setVelocityX(velocityX);
+    }
+}
+
 
     public void draw(Graphics2D g) {
 
@@ -469,12 +482,14 @@ public class GameEngine extends GameCore {
     }
 
     public void setCurrentState(GameState newState) {
-        if (currentState != null) {
-            System.out.println("STATE CHANGE: " + currentState.getClass().getSimpleName()
-                    + " -> " + newState.getClass().getSimpleName());
-        }
-        currentState = newState;
-    }
+    String oldState = (currentState != null) ? currentState.getClass().getSimpleName() : "null";
+    String newStateName = (newState != null) ? newState.getClass().getSimpleName() : "null";
+
+    System.out.println("STATE CHANGE: " + oldState + " -> " + newStateName);
+
+    currentState = newState;
+}
+
 
     public TileMapDrawer getDrawer() {
         return drawer;
