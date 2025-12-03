@@ -7,6 +7,11 @@ import java.util.Iterator;
 import com.TETOSOFT.graphics.*;
 import com.TETOSOFT.input.*;
 import com.TETOSOFT.test.GameCore;
+import com.TETOSOFT.tilegame.decorator.InvincibleDecorator;
+import com.TETOSOFT.tilegame.decorator.PlayerComponent;
+import com.TETOSOFT.tilegame.decorator.PlayerDecorator;
+import com.TETOSOFT.tilegame.decorator.PlayerWrapper;
+import com.TETOSOFT.tilegame.decorator.SpeedDecorator;
 import com.TETOSOFT.tilegame.sprites.*;
 import com.TETOSOFT.tilegame.state.GameOverState;
 import com.TETOSOFT.tilegame.state.GameState;
@@ -23,7 +28,8 @@ public class GameEngine extends GameCore {
 
     public static final float GRAVITY = 0.002f;
     private GameState currentState;
-
+    private PlayerComponent decoratedPlayer;
+    private Player originalPlayer;
     private Point pointCache = new Point();
     private TileMap map;
     private MapLoader mapLoader;
@@ -55,6 +61,8 @@ public class GameEngine extends GameCore {
 
         // load first map
         map = mapLoader.loadNextMap();
+        originalPlayer = (Player) map.getPlayer();
+        decoratedPlayer = new PlayerWrapper(originalPlayer);
         currentState = new MenuStateSimple(this);
     }
 
@@ -65,6 +73,27 @@ public class GameEngine extends GameCore {
         super.stop();
 
     }
+
+    public Player getOriginalPlayer() {
+    // Si decoratedPlayer est null, retourner le joueur de la map
+    if (decoratedPlayer == null) {
+        return (Player)map.getPlayer();
+    }
+    
+    // Traverser la chaîne de décorateurs pour trouver le PlayerWrapper
+    PlayerComponent current = decoratedPlayer;
+    
+    while (current instanceof PlayerDecorator) {
+        current = ((PlayerDecorator)current).decoratedPlayer;
+    }
+    
+    if (current instanceof PlayerWrapper) {
+        return ((PlayerWrapper)current).getPlayer();
+    }
+    
+    // Fallback
+    return (Player)map.getPlayer();
+}
 
     private void initInput() {
         moveLeft = new GameAction("moveLeft");
@@ -84,10 +113,10 @@ public class GameEngine extends GameCore {
 
     private void checkInput(long elapsedTime) {
         if (exit.isPressed()) {
-    setCurrentState(new MenuStateSimple(this));
+            setCurrentState(new MenuStateSimple(this));
         }
 
-        Player player = (Player) map.getPlayer();
+       Player player = getOriginalPlayer();
         if (player.isAlive()) {
             float velocityX = 0;
             if (moveLeft.isPressed()) {
@@ -232,39 +261,43 @@ public class GameEngine extends GameCore {
      * Updates Animation, position, and velocity of all Sprites in the current
      * map.
      */
-    public void updateGameLogic(long elapsedTime) {
-        Creature player = (Creature) map.getPlayer();
-
-        // player is dead! start map over
-        if (player.getState() == Creature.STATE_DEAD) {
-            map = mapLoader.reloadMap();
-            return;
-        }
-
-        // get keyboard/mouse input
-        checkInput(elapsedTime);
-
-        // update player
-        updateCreature(player, elapsedTime);
-        player.update(elapsedTime);
-
-        // update other sprites
-        Iterator i = map.getSprites();
-        while (i.hasNext()) {
-            Sprite sprite = (Sprite) i.next();
-            if (sprite instanceof Creature) {
-                Creature creature = (Creature) sprite;
-                if (creature.getState() == Creature.STATE_DEAD) {
-                    i.remove();
-                } else {
-                    updateCreature(creature, elapsedTime);
-                }
-            }
-            // normal update
-            sprite.update(elapsedTime);
-        }
+   public void updateGameLogic(long elapsedTime) {
+    // Utiliser decoratedPlayer au lieu de map.getPlayer()
+    Player player = getOriginalPlayer(); // Récupère le Player original
+    
+    if (player == null || player.getState() == Creature.STATE_DEAD) {
+        map = mapLoader.reloadMap();
+        // Réinitialiser decoratedPlayer après recharge
+        originalPlayer = (Player)map.getPlayer();
+        decoratedPlayer = new PlayerWrapper(originalPlayer);
+        return;
     }
 
+    // get keyboard/mouse input
+    checkInput(elapsedTime);
+
+    // update player - utiliser decoratedPlayer pour les mises à jour
+    decoratedPlayer.update(elapsedTime);
+    
+    // update physics du player original
+    updateCreature(player, elapsedTime);
+
+    // update other sprites
+    Iterator i = map.getSprites();
+    while (i.hasNext()) {
+        Sprite sprite = (Sprite) i.next();
+        if (sprite instanceof Creature) {
+            Creature creature = (Creature) sprite;
+            if (creature.getState() == Creature.STATE_DEAD) {
+                i.remove();
+            } else {
+                updateCreature(creature, elapsedTime);
+            }
+        }
+        // normal update
+        sprite.update(elapsedTime);
+    }
+}
     /**
      * Updates the creature, applying gravity for creatures that aren't flying,
      * and checks collisions.
@@ -352,6 +385,9 @@ public class GameEngine extends GameCore {
             } else {
                 // player dies!
                 player.setState(Creature.STATE_DYING);
+                if(isPlayerInvincible()){
+                        System.out.println("Le nombre des vies du joueur ne diminue pendant qu 'il est invincible");
+                    return ;}
                 numLives--;
                 if (numLives == 0) {
                     int finalScore = collectedStars;
@@ -370,22 +406,29 @@ public class GameEngine extends GameCore {
         // remove it from the map
         map.removeSprite(powerUp);
 
-        if (powerUp instanceof PowerUp.Star) {
-            // do something here, like give the player points
-            collectedStars++;
-            if (collectedStars == 100) {
-                numLives++;
-                collectedStars = 0;
-            }
+        // Tous les power-ups augmentent le compteur d'étoiles
+        collectedStars++;
+        System.out.println("Étoile collectée! Total: " + collectedStars);
 
-        } else if (powerUp instanceof PowerUp.Music) {
-            // change the music
+        // Tester par le nombre de collectedStars uniquement
+        if (collectedStars == 5) {
+            // Activer invincibilité à 5 étoiles
 
-        } else if (powerUp instanceof PowerUp.Goal) {
-            // advance to next map      
+            decoratedPlayer = new InvincibleDecorator(decoratedPlayer);
+            System.out.println("🎉 5 étoiles! Invincibilité activée!");
 
-            map = mapLoader.loadNextMap();
+        } else if (collectedStars == 2) {
+            // Activer vitesse à 10 étoiles
 
+            decoratedPlayer = new SpeedDecorator(decoratedPlayer);
+            System.out.println("🎉 10 étoiles! Vitesse augmentée!");
+
+        }
+        if (collectedStars >= 100) {
+            numLives++;
+            collectedStars = 0;
+
+            System.out.println("⭐⭐⭐ 100 étoiles! Vie bonus!");
         }
     }
 
@@ -483,5 +526,32 @@ public class GameEngine extends GameCore {
             System.out.println("ERREUR: mapLoader est null");
         }
     }
+    
+    public boolean isPlayerInvincible() {
+    if (decoratedPlayer == null) return false;
+    
+    PlayerComponent current = decoratedPlayer;
+    
+    // Parcourir la chaîne de décorateurs
+    while (current instanceof PlayerDecorator) {
+        if (current instanceof InvincibleDecorator) {
+            // Vérifier si l'invincibilité est encore active
+            return ((InvincibleDecorator)current).isInvincible();
+        }
+        current = ((PlayerDecorator)current).decoratedPlayer;
+    }
+    
+    return false;
+}
+    
+    public float getPlayerMaxSpeed() {
+    if (decoratedPlayer != null) {
+        return decoratedPlayer.getMaxSpeed();
+    }
+    
+    // Fallback
+    Player player = getOriginalPlayer();
+    return player != null ? player.getMaxSpeed() : 0;
+}
 
 }

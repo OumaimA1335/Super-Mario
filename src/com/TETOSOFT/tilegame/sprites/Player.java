@@ -1,11 +1,12 @@
 package com.TETOSOFT.tilegame.sprites;
 
 import com.TETOSOFT.graphics.Animation;
+import com.TETOSOFT.tilegame.decorator.PlayerComponent;
 
 /**
     The Player.
 */
-public class Player extends Creature 
+public class Player extends Creature implements PlayerComponent  
 {
 
     private static final float JUMP_SPEED = -.95f;

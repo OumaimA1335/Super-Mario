@@ -336,11 +336,11 @@ public class MapLoader
 
         // create "star" sprite
         anim = new Animation();
-        anim.addFrame(loadImage("coin1.png"),250 ) ;  
-        anim.addFrame(loadImage("coin2.png"),250);
-        anim.addFrame(loadImage("coin3.png"),250);
-        anim.addFrame(loadImage("coin4.png"),250);
-        anim.addFrame(loadImage("coin5.png"),250);
+        anim.addFrame(loadImage("star1.png"),250 ) ;  
+        anim.addFrame(loadImage("star2.png"),250);
+        anim.addFrame(loadImage("star3.png"),250);
+        anim.addFrame(loadImage("star4.png"),250);
+        anim.addFrame(loadImage("star5.png"),250);
         coinSprite = new PowerUp.Star(anim);
 
         // create "music" sprite
