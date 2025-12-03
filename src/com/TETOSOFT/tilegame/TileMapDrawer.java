@@ -136,19 +136,26 @@ public class TileMapDrawer
 
         // draw sprites
         Iterator i = map.getSprites();
-        while (i.hasNext()) {
-            Sprite sprite = (Sprite)i.next();
-            int x = Math.round(sprite.getX()) + offsetX;
-            int y = Math.round(sprite.getY()) + offsetY;
-            g.drawImage(sprite.getImage(), x, y, null);
+while (i.hasNext()) {
+    Sprite sprite = (Sprite)i.next();
+    int x = Math.round(sprite.getX()) + offsetX;
+    int y = Math.round(sprite.getY()) + offsetY;
+    g.drawImage(sprite.getImage(), x, y, null);
 
-            // wake up the creature when it's on screen
-            if (sprite instanceof Creature &&
-                x >= 0 && x < screenWidth)
-            {
-                ((Creature)sprite).wakeUp();
-            }
-        }
+    // Réveil des créatures
+    if (sprite instanceof Creature && x >= 0 && x < screenWidth) {
+        ((Creature)sprite).wakeUp();
     }
+
+    // Optionnel : ajouter un rectangle vert pour tester visuellement chaque sprite
+    g.setColor(Color.GREEN);
+    g.drawRect(x, y, sprite.getWidth(), sprite.getHeight());
+}
+    }
+    public void drawBackground(Graphics2D g, TileMap map, int width, int height) {
+    g.drawImage(background, 0, 0, width, height, null);
+}
+    
+
 
 }

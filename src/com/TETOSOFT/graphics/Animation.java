@@ -94,5 +94,6 @@ public class Animation
             this.image = image;
             this.endTime = endTime;
         }
-    }
-}
+    
+    
+}}
