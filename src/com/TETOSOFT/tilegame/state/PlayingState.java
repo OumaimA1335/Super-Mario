@@ -66,6 +66,15 @@ public class PlayingState implements GameState {
 
         g.setColor(Color.CYAN);
         g.drawString("PLAYING STATE", 650, 20);
+        // Afficher l'état d'invincibilité
+        if (game.isPlayerInvincible()) {
+            g.setColor(Color.RED);
+            g.drawString("Decorator : INVINCIBLE", 600.0f, 40.0f);
+        }
+         if (game.getPlayerMaxSpeed()!=0) {
+            g.setColor(Color.RED);
+            g.drawString("Decorator : Speed = "+game.getPlayerMaxSpeed(), 600.0f, 60.0f);
+        }
     }
 
     @Override
