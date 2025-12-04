@@ -19,6 +19,7 @@ import com.TETOSOFT.tilegame.sprites.*;
 import com.TETOSOFT.tilegame.state.GameOverState;
 import com.TETOSOFT.tilegame.state.GameState;
 import com.TETOSOFT.tilegame.state.MenuStateSimple;
+import com.TETOSOFT.tilegame.state.PauseState;
 
 /**
  * GameManager manages all parts of the game.
@@ -52,6 +53,8 @@ public class GameEngine extends GameCore {
     private GameAction testCompositeAction;
     public void init() {
         super.init();
+
+        
 
         // set up input manager
         initInput();
@@ -119,6 +122,9 @@ public class GameEngine extends GameCore {
         moveRight = new GameAction("moveRight");
         jump = new GameAction("jump", GameAction.DETECT_INITAL_PRESS_ONLY);
         exit = new GameAction("exit", GameAction.DETECT_INITAL_PRESS_ONLY);
+        pauseAction = new GameAction("pause", GameAction.DETECT_INITAL_PRESS_ONLY);
+       
+
         enterAction = new GameAction("enter", GameAction.DETECT_INITAL_PRESS_ONLY);
          testCompositeAction = new GameAction("testComposite");
         inputManager = new InputManager(screen.getFullScreenWindow());
@@ -133,24 +139,15 @@ public class GameEngine extends GameCore {
     }
 
     private void checkInput(long elapsedTime) {
-        if (exit.isPressed()) {
-            setCurrentState(new MenuStateSimple(this));
-        }
+    if (exit.isPressed()) {
+        setCurrentState(new MenuStateSimple(this));
+    }
 
-       Player player = getOriginalPlayer();
-        if (player.isAlive()) {
-            float velocityX = 0;
-            if (moveLeft.isPressed()) {
-                velocityX -= player.getMaxSpeed();
-            }
-            if (moveRight.isPressed()) {
-                velocityX += player.getMaxSpeed();
-            }
-            if (jump.isPressed()) {
-                player.jump(false);
-            }
-            player.setVelocityX(velocityX);
-        }
+    // Gestion de la pause
+    if (pauseAction.isPressed() && !(currentState instanceof PauseState)) {
+        setCurrentState(new PauseState(this));
+        return; // On ne fait rien d'autre tant que le jeu est en pause
+    }
 
         if (testCompositeAction.isPressed()) {
         testComposite();
@@ -506,12 +503,14 @@ public class GameEngine extends GameCore {
     }
 
     public void setCurrentState(GameState newState) {
-        if (currentState != null) {
-            System.out.println("STATE CHANGE: " + currentState.getClass().getSimpleName()
-                    + " -> " + newState.getClass().getSimpleName());
-        }
-        currentState = newState;
-    }
+    String oldState = (currentState != null) ? currentState.getClass().getSimpleName() : "null";
+    String newStateName = (newState != null) ? newState.getClass().getSimpleName() : "null";
+
+    System.out.println("STATE CHANGE: " + oldState + " -> " + newStateName);
+
+    currentState = newState;
+}
+
 
     public TileMapDrawer getDrawer() {
         return drawer;
