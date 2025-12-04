@@ -7,6 +7,9 @@ import java.util.Iterator;
 import com.TETOSOFT.graphics.*;
 import com.TETOSOFT.input.*;
 import com.TETOSOFT.test.GameCore;
+import com.TETOSOFT.tilegame.composite.GameComponent;
+import com.TETOSOFT.tilegame.composite.GameComposite;
+import com.TETOSOFT.tilegame.composite.LeafAdapter;
 import com.TETOSOFT.tilegame.decorator.InvincibleDecorator;
 import com.TETOSOFT.tilegame.decorator.PlayerComponent;
 import com.TETOSOFT.tilegame.decorator.PlayerDecorator;
@@ -46,7 +49,8 @@ public class GameEngine extends GameCore {
     private GameAction pauseAction;
     private int collectedStars = 0;
     private int numLives = 3;
-
+    private GameComposite rootScene;
+    private GameAction testCompositeAction;
     public void init() {
         super.init();
 
@@ -67,6 +71,21 @@ public class GameEngine extends GameCore {
         originalPlayer = (Player) map.getPlayer();
         decoratedPlayer = new PlayerWrapper(originalPlayer);
         currentState = new MenuStateSimple(this);
+        rootScene = new GameComposite();
+        // Ajout du joueur (Leaf)
+        rootScene.add(new LeafAdapter(originalPlayer));
+
+        // Ajout de tous les sprites du niveau (ennemis, powerups, etc.)
+        Iterator it = map.getSprites();
+        while (it.hasNext()) {
+            Sprite s = (Sprite) it.next();
+            rootScene.add(new LeafAdapter(s));
+        }
+
+        System.out.println("[COMPOSITE] Scene initialisée avec " + 
+                          rootScene.getChildren().size() + " éléments.");
+        // ========== FIN AJOUT ==========
+        
     }
 
     /**
@@ -107,6 +126,7 @@ public class GameEngine extends GameCore {
        
 
         enterAction = new GameAction("enter", GameAction.DETECT_INITAL_PRESS_ONLY);
+         testCompositeAction = new GameAction("testComposite");
         inputManager = new InputManager(screen.getFullScreenWindow());
         inputManager.setCursor(InputManager.INVISIBLE_CURSOR);
 
@@ -115,8 +135,7 @@ public class GameEngine extends GameCore {
         inputManager.mapToKey(jump, KeyEvent.VK_SPACE);
         inputManager.mapToKey(enterAction, KeyEvent.VK_ENTER);
         inputManager.mapToKey(exit, KeyEvent.VK_ESCAPE);
-       inputManager.mapToKey(pauseAction, KeyEvent.VK_P);
-
+        inputManager.mapToKey(testCompositeAction, KeyEvent.VK_F1);
     }
 
     private void checkInput(long elapsedTime) {
@@ -130,31 +149,30 @@ public class GameEngine extends GameCore {
         return; // On ne fait rien d'autre tant que le jeu est en pause
     }
 
-    Player player = getOriginalPlayer();
-    if (player.isAlive()) {
-        float velocityX = 0;
-        if (moveLeft.isPressed()) {
-            velocityX -= player.getMaxSpeed();
-        }
-        if (moveRight.isPressed()) {
-            velocityX += player.getMaxSpeed();
-        }
-        if (jump.isPressed()) {
-            player.jump(false);
-        }
-        player.setVelocityX(velocityX);
+        if (testCompositeAction.isPressed()) {
+        testComposite();
     }
 }
 
+        // Pas besoin de gérer enterAction ici car c'est géré par le GameState
+    
 
     public void draw(Graphics2D g) {
 
-        // Délégue le dessin à l'état courant
         if (currentState != null) {
-            currentState.draw(g);
+        currentState.draw(g);
         } else {
-            // Dessin par défaut (pour compatibilité)
-            drawer.draw(g, map, screen.getWidth(), screen.getHeight());
+        drawer.draw(g, map, screen.getWidth(), screen.getHeight());
+        
+        // TEST VISUEL
+        if (rootScene != null) {
+            // Affiche le nombre d'éléments gérés
+            g.setColor(Color.GREEN);
+            g.drawString("COMPOSITE: " + rootScene.getChildren().size() + " éléments", 10, 40);
+            
+            // Dessine via composite
+            rootScene.render(g);
+        }
             g.setColor(Color.WHITE);
             g.drawString("Press ESC for EXIT.", 10.0f, 20.0f);
             g.setColor(Color.GREEN);
@@ -267,6 +285,9 @@ public class GameEngine extends GameCore {
         } else {
             // Logique de jeu originale (maintenue pour compatibilité)
             updateGameLogic(elapsedTime);
+        }
+        if (rootScene != null) {
+            rootScene.update(elapsedTime);
         }
     }
 
@@ -567,6 +588,17 @@ public class GameEngine extends GameCore {
     // Fallback
     Player player = getOriginalPlayer();
     return player != null ? player.getMaxSpeed() : 0;
+}
+
+
+public void testComposite() {
+    if (rootScene != null) {
+        System.out.println("=== TEST COMPOSITE ===");
+        System.out.println("✅ COMPOSITE PATTERN ACTIF");
+        System.out.println("Nombre d'éléments gérés : " + rootScene.getChildren().size());
+        System.out.println("Tous les éléments sont traités uniformément via l'interface GameComponent");
+        System.out.println("=== FIN TEST ===");
+    }
 }
 
 }
