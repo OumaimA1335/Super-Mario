@@ -15,11 +15,14 @@ import com.TETOSOFT.tilegame.decorator.PlayerComponent;
 import com.TETOSOFT.tilegame.decorator.PlayerDecorator;
 import com.TETOSOFT.tilegame.decorator.PlayerWrapper;
 import com.TETOSOFT.tilegame.decorator.SpeedDecorator;
+import com.TETOSOFT.tilegame.logger.GameLogger;
 import com.TETOSOFT.tilegame.sprites.*;
 import com.TETOSOFT.tilegame.state.GameOverState;
 import com.TETOSOFT.tilegame.state.GameState;
 import com.TETOSOFT.tilegame.state.MenuStateSimple;
 import com.TETOSOFT.tilegame.state.PauseState;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * GameManager manages all parts of the game.
@@ -27,7 +30,14 @@ import com.TETOSOFT.tilegame.state.PauseState;
 public class GameEngine extends GameCore {
 
     public static void main(String[] args) {
-        new GameEngine().run();
+        System.setProperty("log4j2.debug", "true");
+        GameLogger.gameStarted();
+        try {
+            new GameEngine().run();
+        } catch (Exception e) {
+            GameLogger.error("Erreur fatale dans le jeu", e);
+ 
+        }
     }
 
     public static final float GRAVITY = 0.002f;
@@ -45,17 +55,18 @@ public class GameEngine extends GameCore {
     private GameAction jump;
     private GameAction exit;
     private GameAction enterAction;
-
     private GameAction pauseAction;
     private int collectedStars = 0;
     private int numLives = 3;
     private GameComposite rootScene;
     private GameAction testCompositeAction;
+
+   
+
     public void init() {
         super.init();
 
-        
-
+    
         // set up input manager
         initInput();
 
@@ -71,6 +82,7 @@ public class GameEngine extends GameCore {
         originalPlayer = (Player) map.getPlayer();
         decoratedPlayer = new PlayerWrapper(originalPlayer);
         currentState = new MenuStateSimple(this);
+        GameLogger.stateEnter("MenuStateSimple");
         rootScene = new GameComposite();
         // Ajout du joueur (Leaf)
         rootScene.add(new LeafAdapter(originalPlayer));
@@ -81,41 +93,43 @@ public class GameEngine extends GameCore {
             Sprite s = (Sprite) it.next();
             rootScene.add(new LeafAdapter(s));
         }
+        GameLogger.compositeCreated(LeafAdapter.class.getSimpleName(), rootScene.getChildren().size());
 
-        System.out.println("[COMPOSITE] Scene initialisée avec " + 
-                          rootScene.getChildren().size() + " éléments.");
+        System.out.println("[COMPOSITE] Scene initialisée avec "
+                + rootScene.getChildren().size() + " éléments.");
         // ========== FIN AJOUT ==========
-        
+
     }
 
     /**
      * Closes any resurces used by the GameManager.
      */
     public void stop() {
+        GameLogger.gameEnded(collectedStars );
         super.stop();
 
     }
 
     public Player getOriginalPlayer() {
-    // Si decoratedPlayer est null, retourner le joueur de la map
-    if (decoratedPlayer == null) {
-        return (Player)map.getPlayer();
+        // Si decoratedPlayer est null, retourner le joueur de la map
+        if (decoratedPlayer == null) {
+            return (Player) map.getPlayer();
+        }
+
+        // Traverser la chaîne de décorateurs pour trouver le PlayerWrapper
+        PlayerComponent current = decoratedPlayer;
+
+        while (current instanceof PlayerDecorator) {
+            current = ((PlayerDecorator) current).decoratedPlayer;
+        }
+
+        if (current instanceof PlayerWrapper) {
+            return ((PlayerWrapper) current).getPlayer();
+        }
+
+        // Fallback
+        return (Player) map.getPlayer();
     }
-    
-    // Traverser la chaîne de décorateurs pour trouver le PlayerWrapper
-    PlayerComponent current = decoratedPlayer;
-    
-    while (current instanceof PlayerDecorator) {
-        current = ((PlayerDecorator)current).decoratedPlayer;
-    }
-    
-    if (current instanceof PlayerWrapper) {
-        return ((PlayerWrapper)current).getPlayer();
-    }
-    
-    // Fallback
-    return (Player)map.getPlayer();
-}
 
     private void initInput() {
         moveLeft = new GameAction("moveLeft");
@@ -123,10 +137,9 @@ public class GameEngine extends GameCore {
         jump = new GameAction("jump", GameAction.DETECT_INITAL_PRESS_ONLY);
         exit = new GameAction("exit", GameAction.DETECT_INITAL_PRESS_ONLY);
         pauseAction = new GameAction("pause", GameAction.DETECT_INITAL_PRESS_ONLY);
-       
 
         enterAction = new GameAction("enter", GameAction.DETECT_INITAL_PRESS_ONLY);
-         testCompositeAction = new GameAction("testComposite");
+        testCompositeAction = new GameAction("testComposite");
         inputManager = new InputManager(screen.getFullScreenWindow());
         inputManager.setCursor(InputManager.INVISIBLE_CURSOR);
 
@@ -136,43 +149,62 @@ public class GameEngine extends GameCore {
         inputManager.mapToKey(enterAction, KeyEvent.VK_ENTER);
         inputManager.mapToKey(exit, KeyEvent.VK_ESCAPE);
         inputManager.mapToKey(testCompositeAction, KeyEvent.VK_F1);
+          inputManager.mapToKey(pauseAction, KeyEvent.VK_P);
     }
 
     private void checkInput(long elapsedTime) {
-    if (exit.isPressed()) {
-        setCurrentState(new MenuStateSimple(this));
-    }
+       
+        if (exit.isPressed()) {
+            setCurrentState(new MenuStateSimple(this));
+        }
+        Player player = getOriginalPlayer();
 
-    // Gestion de la pause
-    if (pauseAction.isPressed() && !(currentState instanceof PauseState)) {
-        setCurrentState(new PauseState(this));
-        return; // On ne fait rien d'autre tant que le jeu est en pause
-    }
+        if (player.isAlive()) {
+            float velocityX = 0;
+            if (moveLeft.isPressed()) {
+                   GameLogger.playerMove("LEFT");
+                velocityX -= player.getMaxSpeed();
+            }
+            if (moveRight.isPressed()) {
+                GameLogger.playerJump();
+                velocityX += player.getMaxSpeed();
+            }
+            if (jump.isPressed()) {
+                   GameLogger.playerMove("Jump");
+                player.jump(false);
+            }
+            player.setVelocityX(velocityX);
+        }
+
+        // Gestion de la pause
+        if (pauseAction.isPressed() && !(currentState instanceof PauseState)) {
+           
+            setCurrentState(new PauseState(this));
+            return; // On ne fait rien d'autre tant que le jeu est en pause
+        }
 
         if (testCompositeAction.isPressed()) {
-        testComposite();
+            testComposite();
+        }
     }
-}
 
-        // Pas besoin de gérer enterAction ici car c'est géré par le GameState
-    
-
+    // Pas besoin de gérer enterAction ici car c'est géré par le GameState
     public void draw(Graphics2D g) {
 
         if (currentState != null) {
-        currentState.draw(g);
+            currentState.draw(g);
         } else {
-        drawer.draw(g, map, screen.getWidth(), screen.getHeight());
-        
-        // TEST VISUEL
-        if (rootScene != null) {
-            // Affiche le nombre d'éléments gérés
-            g.setColor(Color.GREEN);
-            g.drawString("COMPOSITE: " + rootScene.getChildren().size() + " éléments", 10, 40);
-            
-            // Dessine via composite
-            rootScene.render(g);
-        }
+            drawer.draw(g, map, screen.getWidth(), screen.getHeight());
+
+            // TEST VISUEL
+            if (rootScene != null) {
+                // Affiche le nombre d'éléments gérés
+                g.setColor(Color.GREEN);
+                g.drawString("COMPOSITE: " + rootScene.getChildren().size() + " éléments", 10, 40);
+
+                // Dessine via composite
+                rootScene.render(g);
+            }
             g.setColor(Color.WHITE);
             g.drawString("Press ESC for EXIT.", 10.0f, 20.0f);
             g.setColor(Color.GREEN);
@@ -295,43 +327,44 @@ public class GameEngine extends GameCore {
      * Updates Animation, position, and velocity of all Sprites in the current
      * map.
      */
-   public void updateGameLogic(long elapsedTime) {
-    // Utiliser decoratedPlayer au lieu de map.getPlayer()
-    Player player = getOriginalPlayer(); // Récupère le Player original
-    
-    if (player == null || player.getState() == Creature.STATE_DEAD) {
-        map = mapLoader.reloadMap();
-        // Réinitialiser decoratedPlayer après recharge
-        originalPlayer = (Player)map.getPlayer();
-        decoratedPlayer = new PlayerWrapper(originalPlayer);
-        return;
-    }
+    public void updateGameLogic(long elapsedTime) {
+        // Utiliser decoratedPlayer au lieu de map.getPlayer()
+        Player player = getOriginalPlayer(); // Récupère le Player original
 
-    // get keyboard/mouse input
-    checkInput(elapsedTime);
-
-    // update player - utiliser decoratedPlayer pour les mises à jour
-    decoratedPlayer.update(elapsedTime);
-    
-    // update physics du player original
-    updateCreature(player, elapsedTime);
-
-    // update other sprites
-    Iterator i = map.getSprites();
-    while (i.hasNext()) {
-        Sprite sprite = (Sprite) i.next();
-        if (sprite instanceof Creature) {
-            Creature creature = (Creature) sprite;
-            if (creature.getState() == Creature.STATE_DEAD) {
-                i.remove();
-            } else {
-                updateCreature(creature, elapsedTime);
-            }
+        if (player == null || player.getState() == Creature.STATE_DEAD) {
+            map = mapLoader.reloadMap();
+            // Réinitialiser decoratedPlayer après recharge
+            originalPlayer = (Player) map.getPlayer();
+            decoratedPlayer = new PlayerWrapper(originalPlayer);
+            return;
         }
-        // normal update
-        sprite.update(elapsedTime);
+
+        // get keyboard/mouse input
+        checkInput(elapsedTime);
+
+        // update player - utiliser decoratedPlayer pour les mises à jour
+        decoratedPlayer.update(elapsedTime);
+
+        // update physics du player original
+        updateCreature(player, elapsedTime);
+
+        // update other sprites
+        Iterator i = map.getSprites();
+        while (i.hasNext()) {
+            Sprite sprite = (Sprite) i.next();
+            if (sprite instanceof Creature) {
+                Creature creature = (Creature) sprite;
+                if (creature.getState() == Creature.STATE_DEAD) {
+                    i.remove();
+                } else {
+                    updateCreature(creature, elapsedTime);
+                }
+            }
+            // normal update
+            sprite.update(elapsedTime);
+        }
     }
-}
+
     /**
      * Updates the creature, applying gravity for creatures that aren't flying,
      * and checks collisions.
@@ -408,24 +441,33 @@ public class GameEngine extends GameCore {
         // check for player collision with other sprites
         Sprite collisionSprite = getSpriteCollision(player);
         if (collisionSprite instanceof PowerUp) {
+         
+            GameLogger.powerUpCollected("PowerUp", collectedStars);
             acquirePowerUp((PowerUp) collisionSprite);
         } else if (collisionSprite instanceof Creature) {
+             GameLogger.collisionDetected("Player", "Enemy");
             Creature badguy = (Creature) collisionSprite;
             if (canKill) {
+                
                 // kill the badguy and make player bounce
                 badguy.setState(Creature.STATE_DYING);
                 player.setY(badguy.getY() - player.getHeight());
                 player.jump(true);
             } else {
+                  
                 // player dies!
                 player.setState(Creature.STATE_DYING);
-                if(isPlayerInvincible()){
-                        System.out.println("Le nombre des vies du joueur ne diminue pendant qu 'il est invincible");
-                    return ;}
+                if (isPlayerInvincible()) {
+                      System.out.println("Le nombre des vies du joueur ne diminue pendant qu 'il est invincible");
+                    return;
+                }
+                 int oldLives = numLives;
                 numLives--;
+                GameLogger.lifeChanged(oldLives, numLives);
                 if (numLives == 0) {
                     int finalScore = collectedStars;
                     String reason = "VOUS AVEZ PERDU TOUTES VOS VIES!";
+                    GameLogger.gameEnded(finalScore);
                     setCurrentState(new GameOverState(this, reason, finalScore));
                     return;
                 }
@@ -439,7 +481,8 @@ public class GameEngine extends GameCore {
     public void acquirePowerUp(PowerUp powerUp) {
         // remove it from the map
         map.removeSprite(powerUp);
-
+        
+        GameLogger.starsCollected(collectedStars);
         // Tous les power-ups augmentent le compteur d'étoiles
         collectedStars++;
         System.out.println("Étoile collectée! Total: " + collectedStars);
@@ -447,13 +490,15 @@ public class GameEngine extends GameCore {
         // Tester par le nombre de collectedStars uniquement
         if (collectedStars == 5) {
             // Activer invincibilité à 5 étoiles
-
+             
+            GameLogger.decoratorApplied("InvincibleDecorator", "Player");
             decoratedPlayer = new InvincibleDecorator(decoratedPlayer);
             System.out.println("🎉 5 étoiles! Invincibilité activée!");
 
-        } else if (collectedStars == 2) {
+        } else if (collectedStars == 10) {
             // Activer vitesse à 10 étoiles
-
+           
+            GameLogger.decoratorApplied("SpeedDecorator", "Player");
             decoratedPlayer = new SpeedDecorator(decoratedPlayer);
             System.out.println("🎉 10 étoiles! Vitesse augmentée!");
 
@@ -503,14 +548,14 @@ public class GameEngine extends GameCore {
     }
 
     public void setCurrentState(GameState newState) {
-    String oldState = (currentState != null) ? currentState.getClass().getSimpleName() : "null";
-    String newStateName = (newState != null) ? newState.getClass().getSimpleName() : "null";
+        String oldState = (currentState != null) ? currentState.getClass().getSimpleName() : "null";
+        String newStateName = (newState != null) ? newState.getClass().getSimpleName() : "null";
+        GameLogger.stateChanged(oldState, newStateName);
 
-    System.out.println("STATE CHANGE: " + oldState + " -> " + newStateName);
+        System.out.println("STATE CHANGE: " + oldState + " -> " + newStateName);
 
-    currentState = newState;
-}
-
+        currentState = newState;
+    }
 
     public TileMapDrawer getDrawer() {
         return drawer;
@@ -562,43 +607,49 @@ public class GameEngine extends GameCore {
             System.out.println("ERREUR: mapLoader est null");
         }
     }
-    
+
     public boolean isPlayerInvincible() {
-    if (decoratedPlayer == null) return false;
-    
-    PlayerComponent current = decoratedPlayer;
-    
-    // Parcourir la chaîne de décorateurs
-    while (current instanceof PlayerDecorator) {
-        if (current instanceof InvincibleDecorator) {
-            // Vérifier si l'invincibilité est encore active
-            return ((InvincibleDecorator)current).isInvincible();
+        if (decoratedPlayer == null) {
+            return false;
         }
-        current = ((PlayerDecorator)current).decoratedPlayer;
+
+        PlayerComponent current = decoratedPlayer;
+
+        // Parcourir la chaîne de décorateurs
+        while (current instanceof PlayerDecorator) {
+            if (current instanceof InvincibleDecorator) {
+                // Vérifier si l'invincibilité est encore active
+                return ((InvincibleDecorator) current).isInvincible();
+            }
+            current = ((PlayerDecorator) current).decoratedPlayer;
+        }
+
+        return false;
     }
-    
-    return false;
-}
-    
+
     public float getPlayerMaxSpeed() {
-    if (decoratedPlayer != null) {
-        return decoratedPlayer.getMaxSpeed();
+        if (decoratedPlayer != null) {
+            return decoratedPlayer.getMaxSpeed();
+        }
+
+        // Fallback
+        Player player = getOriginalPlayer();
+        return player != null ? player.getMaxSpeed() : 0;
+    }
+
+    public void testComposite() {
+        if (rootScene != null) {
+            System.out.println("=== TEST COMPOSITE ===");
+            System.out.println("✅ COMPOSITE PATTERN ACTIF");
+            System.out.println("Nombre d'éléments gérés : " + rootScene.getChildren().size());
+            System.out.println("Tous les éléments sont traités uniformément via l'interface GameComponent");
+            System.out.println("=== FIN TEST ===");
+        }
+    }
+
+    public GameState getCurrentState() {
+        return currentState;
     }
     
-    // Fallback
-    Player player = getOriginalPlayer();
-    return player != null ? player.getMaxSpeed() : 0;
-}
-
-
-public void testComposite() {
-    if (rootScene != null) {
-        System.out.println("=== TEST COMPOSITE ===");
-        System.out.println("✅ COMPOSITE PATTERN ACTIF");
-        System.out.println("Nombre d'éléments gérés : " + rootScene.getChildren().size());
-        System.out.println("Tous les éléments sont traités uniformément via l'interface GameComponent");
-        System.out.println("=== FIN TEST ===");
-    }
-}
 
 }

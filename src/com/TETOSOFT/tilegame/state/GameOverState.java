@@ -1,6 +1,7 @@
 package com.TETOSOFT.tilegame.state;
 
 import com.TETOSOFT.tilegame.GameEngine;
+import com.TETOSOFT.tilegame.logger.GameLogger;
 import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Font;
@@ -34,12 +35,14 @@ public class GameOverState implements GameState {
         
         // Vérification des entrées
         if (game.isEnterPressed()) {
+            GameLogger.stateEnter(PlayingState.class.getSimpleName());
             System.out.println("ENTREE pressé - redémarrage du jeu");
             restartGame();
             return;
         }
         
         if (game.isEscapePressed()) {
+            GameLogger.stateEnter(GameOverState.class.getSimpleName());
             System.out.println("ECHAP pressé - arrêt du jeu");
             game.stop();
             return;

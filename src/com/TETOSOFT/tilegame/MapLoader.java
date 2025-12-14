@@ -8,6 +8,7 @@ import javax.swing.ImageIcon;
 
 import com.TETOSOFT.graphics.*;
 import com.TETOSOFT.tilegame.factory.EnemyFactory;
+import com.TETOSOFT.tilegame.logger.GameLogger;
 import com.TETOSOFT.tilegame.sprites.*;
 
 
@@ -182,12 +183,15 @@ public class MapLoader
                     addSprite(newMap, goalSprite, x, y);
                 }
                 else if (ch == '1') {
+                  
                      Creature grub = EnemyFactory.createEnemy("grub", grubAnim[0], grubAnim[1], grubAnim[2], grubAnim[3]);
-                    addSprite(newMap, grub, x, y);
+                     GameLogger.factoryProductCreated("Grub", "Factory :EnemyFactory");
+                     addSprite(newMap, grub, x, y);
                 }
                 else if (ch == '2') {
                      Creature fly = EnemyFactory.createEnemy("fly", flyAnim[0], flyAnim[1], flyAnim[2], flyAnim[3]);
-                    addSprite(newMap, fly, x, y);
+                     GameLogger.factoryProductCreated("Fly", "Factory :EnemyFactory");
+                     addSprite(newMap, fly, x, y);
                 }
             }
         }

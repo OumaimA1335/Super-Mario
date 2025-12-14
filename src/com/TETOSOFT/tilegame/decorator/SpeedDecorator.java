@@ -1,5 +1,7 @@
 package com.TETOSOFT.tilegame.decorator;
 
+import com.TETOSOFT.tilegame.logger.GameLogger;
+
 public class SpeedDecorator extends PlayerDecorator {
     private static final float SPEED_MULTIPLIER = 3.5f;
     private static final long DURATION = 10000; // 10 secondes
@@ -28,6 +30,7 @@ public class SpeedDecorator extends PlayerDecorator {
     public void update(long elapsedTime) {
         if (isActive && System.currentTimeMillis() > powerUpEndTime) {
             isActive = false;
+            GameLogger.decoratorRemoved("Speed", "Player");
             System.out.println("Speed boost expiré!");
         }
         decoratedPlayer.update(elapsedTime);
