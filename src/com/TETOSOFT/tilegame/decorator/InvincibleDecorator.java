@@ -1,5 +1,6 @@
 package com.TETOSOFT.tilegame.decorator;
 
+import com.TETOSOFT.tilegame.logger.GameLogger;
 import com.TETOSOFT.tilegame.sprites.Creature;
 
 public class InvincibleDecorator extends PlayerDecorator {
@@ -34,6 +35,7 @@ public class InvincibleDecorator extends PlayerDecorator {
         // Vérifier l'expiration du power-up
         if (isActive && System.currentTimeMillis() > powerUpEndTime) {
             isActive = false;
+            GameLogger.decoratorRemoved("Invincible", "Player");
             System.out.println("Invincibilité expirée!");
             
             // Restaurer l'état original si nécessaire

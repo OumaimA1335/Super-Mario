@@ -1,11 +1,12 @@
 package com.TETOSOFT.tilegame.state;
 
 import com.TETOSOFT.tilegame.GameEngine;
+import com.TETOSOFT.tilegame.logger.GameLogger;
 import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Font;
 
-public class MenuStateSimple implements GameState {
+public class MenuStateSimple  implements GameState {
 
     private GameEngine game;
     private long startTime;
@@ -30,12 +31,14 @@ public class MenuStateSimple implements GameState {
         }
         // Utilisez les méthodes de GameEngine
         if (game.isEnterPressed()) {
+               GameLogger.stateEnter(PlayingState.class.getSimpleName());
             System.out.println("ENTREE pressé - démarrage du jeu");
             game.setCurrentState(new PlayingState(game));
             return;
         }
 
         if (game.isEscapePressed()) {
+             GameLogger.stateEnter(GameOverState.class.getSimpleName());
             System.out.println("ECHAP pressé - retour au menu");
             game.stop();
             return;
