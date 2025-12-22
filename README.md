@@ -1,141 +1,40 @@
-README.md — Super Mario Java Platformer
-Super Mario – Java Platformer
+# 🎮 Super Mario Java Project
 
-Un jeu de plateforme inspiré de Super Mario, développé en Java, utilisant Swing/Graphics2D pour le rendu, un moteur de jeu simple, et plusieurs patrons de conception (dont Composite, Decorator, Adapter).
+## Overview
+This project is a Java-based **Super Mario game** developed to demonstrate object-oriented design principles and software design patterns. The game implements multiple design patterns to make the architecture flexible, maintainable, and scalable.
 
-Ce projet fait partie d’un travail académique visant à appliquer des patterns avancés dans un environnement de jeu 2D.
+## 🛠️ Technologies & Tools
+- **Java** – Main programming language  
+- **Log4j** – Logging framework for tracking events and debugging  
+- **GitHub** – Version control system for managing code  
 
-1. Fonctionnalités
+### Design Patterns Used
+- **State Pattern** – To manage the overall game flow (Menu, Playing, Paused, Game Over)  
+- **Composite Pattern** – To handle groups of game objects as a single unit  
+- **Factory Pattern** – To create different types of enemies and power-ups  
+- **Decorator Pattern** – To dynamically add abilities or effects to game objects  
 
--Déplacement du joueur (gauche, droite, saut).
+## 📌 Features
+- Multiple **game states**: Menu, Playing, Paused, Game Over  
+- Smooth transitions between game states using the **State pattern**  
+- Dynamic creation of enemies and power-ups via the **Factory pattern**  
+- Grouping of game objects (blocks, coins, enemies) using **Composite pattern**  
+- Extendable game objects with **Decorator pattern**  
+- Logging of game events (collisions, score updates, state changes) using **Log4j**  
+- Modular and maintainable code following object-oriented principles  
 
--Animation des sprites (joueur, ennemis, objets, tuiles).
+## 🏗️ Architecture
+- **State Pattern:** Controls game behavior depending on current state (Menu, Playing, Paused, Game Over).  
+- **Composite Pattern:** Represents game levels as a tree of objects (blocks, coins, enemies).  
+- **Factory Pattern:** Creates enemies and power-ups without exposing instantiation logic.  
+- **Decorator Pattern:** Adds new abilities or effects to game objects dynamically.  
+- **Log4j:** Logs important game events, errors, and debug messages for monitoring and debugging.  
 
--Détection des collisions (carte / ennemis / objets).
+## 🚀 How to Run
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/OumaimA1335/Super-Mario.git
 
--Gestion d’une carte en tuiles (tilemap).
-
--Système modulaire permettant d’ajouter facilement de nouveaux ennemis ou objets.
-
--Patron Composite pour la gestion des entités du jeu.
-
--Pattern Decorator (ex: InvincibleDecorator).
-
--Adapter pour intégrer n’importe quel Sprite dans le Composite.
-
-2. Technologies utilisées
-Domaine	                       Technologie
-Langage	                         Java 17
-Librairie graphique	             Java2D (Graphics2D, BufferedImage)
-Gestion du rendu	             Game loop custom
-IDE recommandé	                 NetBeans
-Design patterns	                 Composite, State, Decorator,Factory
-
-3. Installation
-Prérequis
-
-Java 17+
-
-IntelliJ IDEA ou VSCode ou NetBeans
-
-GitHub installé
-
-
-4. Exécution du jeu
-A. Via IntelliJ IDEA
-
-Ouvrez IntelliJ
-
-Cliquez sur File > Open
-
-Sélectionnez le dossier Super-Mario
-
-Attendez l'import des dépendances
-
-Exécutez la classe :
-
-com.TETOSOFT.test.Game
-
-
-ou selon votre projet :
-
-com.TETOSOFT.tilegame.GameManager
-
-
-(Le nom exact dépend de votre version.)
-
-Le jeu se lancera dans une fenêtre Java Swing.
-
-B. Compilation et exécution manuelle
-javac -cp src -d out $(find src -name "*.java")
-java -cp out com.TETOSOFT.test.Game
-
-5. Structure du projet
-Super-Mario/
-│
-├── src/com/TETOSOFT/
-│   ├── graphics/           → gestion des images
-│   ├── input/              → gestion clavier
-│   ├── tilegame/           → moteur du jeu
-│   │   ├── composite/      → Implémentation du patron Composite
-│   │   ├── decorator/      → Décorateurs du player
-│   │   ├── sprite/         → classes des sprites
-│   │   ├── creatures/      → classes des ennemis
-│   │   └── map/            → chargement de la tilemap
-│   └── test/Game.java      → classe principale
-│
-└── resources/
-    ├── maps/               → niveaux
-    └── images/             → sprites
-
-6. Patron Composite implémenté
-But
-
-Simplifier la gestion des objets du jeu :
-
-le joueur
-
-les ennemis
-
-les pièces
-
-les objets
-
-tout autre sprite
-
--> Tous sont ajoutés dans un GameComposite.
-
-Composants:
-
--GameComponent (interface)
-
--GameComposite (composite)
-
--LeafAdapter (adaptateur pour sprites existants)
-
-Cycle de rendu:
-rootComposite.update(deltaTime);
-rootComposite.render(graphics);
-
-
--> Chaque enfant est automatiquement mis à jour et dessiné.
-
-7. Ajouter un nouvel ennemi (exemple)
-Enemy e = new Enemy(x, y);
-GameComponent wrapped = new LeafAdapter(e);
-gameComposite.add(wrapped);
-
-
-Pas besoin de modifier le moteur du jeu.
-
-
-9. Contributions
-
-Les contributions sont les bienvenues.
-Créez une branche :
-
-git checkout -b feature-nouvelle-fonction
-
-Puis ouvrez un Pull Request.
+https://github.com/user-attachments/assets/28445a65-3873-4752-abe8-88443276419e
 
 
